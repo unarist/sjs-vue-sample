@@ -95,7 +95,16 @@ object App {
           |  <comp-render str-prop='hoge' bool-prop>hello</comp-render>
           |  <comp-functional str-prop='hoge' bool-prop>hello</comp-functional>
           |</div>
-          |""".stripMargin
+          |""".stripMargin,
+      // 中身は↑と同じ
+      render = js.ThisFunction.fromFunction2 { (v: vue.Vue, h: vue.CreateElement) =>
+        h("div", js.Array(
+          h("h2", "Vue x ScalaJS"),
+          h("comp-normal", vue.VNodeData(props = js.Dictionary[js.Any]("str-prop" -> "hoge", "bool-prop" -> true)), "hello"),
+          h("comp-render", vue.VNodeData(props = js.Dictionary[js.Any]("str-prop" -> "hoge", "bool-prop" -> true)), "hello"),
+          h("comp-functional", vue.VNodeData(props = js.Dictionary[js.Any]("str-prop" -> "hoge", "bool-prop" -> true)), "hello")
+        ))
+      }
     )).$mount(dom.document.getElementById("root"))
   }
 }
