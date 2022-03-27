@@ -2,6 +2,11 @@
 
 ScalaJSとVue2でそこそこの書き味を探ったなにか。
 
+```
+$ sbt fastLinkJS
+$ open index.html
+```
+
 単純なFacadeと言うには、以下のように魔改造している。
 
 * 型推論がしんどいところの自由度を下げたり
