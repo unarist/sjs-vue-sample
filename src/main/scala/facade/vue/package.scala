@@ -293,8 +293,8 @@ package object vue {
     var propsData: js.UndefOr[js.Object | js.Dictionary[js.Any]]
     var computed: js.UndefOr[js.Dictionary[js.Function0[js.Any | ComputedOptions[js.Any]]]]
     var methods: js.UndefOr[js.Dictionary[js.Function]]
-    // var watch: js.UndefOr[js.Dictionary[WatchHandler | WatchOptionsWithHandler]]
-    var watch: js.UndefOr[js.Object | js.Dictionary[js.Object]]
+    // 型をシンプルにするため、直接ハンドラ関数を指定する形は捨てた
+    var watch: js.UndefOr[js.Dictionary[WatchHandler]]
     var el: js.UndefOr[Element | String]
     var template: js.UndefOr[String]
     var render: js.UndefOr[js.ThisFunction1[Vue, CreateElement, VNode]]
@@ -335,7 +335,7 @@ package object vue {
       propsData: js.UndefOr[js.Object | js.Dictionary[js.Any]] = js.undefined,
       computed: js.UndefOr[js.Dictionary[js.Function0[js.Any | ComputedOptions[js.Any]]]] = js.undefined,
       methods: js.UndefOr[js.Dictionary[js.Function]] = js.undefined,
-      watch: js.UndefOr[js.Object | js.Dictionary[js.Object]] = js.undefined,
+      watch: js.UndefOr[js.Dictionary[WatchHandler]] = js.undefined,
       el: js.UndefOr[Element | String] = js.undefined,
       template: js.UndefOr[String] = js.undefined,
       render: js.UndefOr[js.ThisFunction1[Vue, CreateElement, VNode]] = js.undefined,
@@ -547,23 +547,21 @@ package object vue {
     }
   }
 
-  trait WatchOptionsWithHandler extends WatchOptions {
+  trait WatchHandler extends WatchOptions {
     // var handler: String | js.Function2[T, T, Unit] | js.ThisFunction2[Vue, T, T, Unit]
     var handler: js.Object
   }
 
-  object WatchOptionsWithHandler {
-    def apply[T](
-      handler: js.Object,
-      deep: js.UndefOr[Boolean] = js.undefined,
-      immediate: js.UndefOr[Boolean] = js.undefined
-    ): WatchOptionsWithHandler = {
-      val _obj$ = js.Dynamic.literal(
-        "handler" -> handler.asInstanceOf[js.Any]
-      )
-      deep.foreach(_v => _obj$.updateDynamic("deep")(_v.asInstanceOf[js.Any]))
-      immediate.foreach(_v => _obj$.updateDynamic("immediate")(_v.asInstanceOf[js.Any]))
-      _obj$.asInstanceOf[WatchOptionsWithHandler]
+  object WatchHandler {
+    /**
+     *
+     * @param handler 第一引数に新しい値、第二引数に古い値を受け取るハンドラ関数。Vueインスタンスが必要な場合は js.ThisFunction を指定する。
+     * @param deep 対象のプロパティだけでなく、その子孫プロパティの変更も監視する場合は true
+     * @param immediate 監視を開始した直後にも一度呼び出す場合は true
+     * @return
+     */
+    def apply(handler: js.Function, deep: Boolean = false, immediate: Boolean = false): WatchHandler = {
+      js.Dynamic.literal(handler = handler, deep = deep, immediate = immediate).asInstanceOf[WatchHandler]
     }
   }
 
