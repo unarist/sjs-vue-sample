@@ -25,10 +25,10 @@ object App {
         "clickCount2x" -> js.Any.fromFunction1((vueInstance: vue.Vue) => vueInstance.$data.clickCount.asInstanceOf[Int] * 2)
       ),
       watch = js.Dictionary(
-        "strProp" -> vue.WatchHandler(js.ThisFunction.fromFunction2((v: vue.Vue, newValue: String) => println(""))),
-        "boolProp" -> vue.WatchHandler((newValue: Boolean) => println("")),
+        "strProp" -> vue.WatchHandler(js.ThisFunction.fromFunction2((v: vue.Vue, newValue: String) => println("never"))),
+        "boolProp" -> vue.WatchHandler((newValue: Boolean) => println("never")),
         "clickCount" -> vue.WatchHandler(
-          handler = (newValue: Int, oldValue: Int) => println(""),
+          handler = (newValue: js.UndefOr[Int], oldValue: js.UndefOr[Int]) => println(s"clickCount: ${oldValue} -> ${newValue}"),
           immediate = true
         )
       ),

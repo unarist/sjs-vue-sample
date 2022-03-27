@@ -6,10 +6,8 @@ import js.annotation._
 import js.|
 
 package object vue {
-  type SingleArray[T] = js.Array[T]
   type CombinedVueInstance = Vue
   type VueConstructor = Vue.type
-  type ExtendedVue = VueConstructor
   type PluginFunction[T] = js.Function2[VueConstructor, T, Unit]
   type ScopedSlot = js.Function1[js.Any, ScopedSlotReturnValue]
   //  type ScopedSlotReturnValue = js.UndefOr[VNode | String | Boolean | Null | ScopedSlotReturnArray]
@@ -22,7 +20,7 @@ package object vue {
   type Component = VueConstructor | FunctionalComponentOptions | ComponentOptions
   // type WatchHandler[T] = String | js.Function2[T, T, Unit] | js.ThisFunction2[Vue, T, T, Unit]
   // type WatchItem = WatchOptionsWithHandler[js.Any] | WatchHandler[Any]
-  type DirectiveFunction = (HTMLElement, DirectiveBinding, VNode, VNode) => Unit
+  type DirectiveFunction = js.Function4[HTMLElement, DirectiveBinding, VNode, VNode, Unit]
   type InjectKey = String | js.Symbol
   type InjectOptions = js.Dictionary[InjectKey | js.Any] | js.Array[String]
 
@@ -72,7 +70,7 @@ package object vue {
   @JSGlobal
   @js.native
   object Vue extends js.Object {
-    def extend(options: ComponentOptions = ???): ExtendedVue = js.native
+    def extend(options: ComponentOptions = ???): this.type = js.native
     def nextTick[T](callback: js.ThisFunction0[T, Unit], context: T = ???): Unit = js.native
     def nextTick(): js.Promise[Unit] = js.native
     def set[T](`object`: js.Object, key: String | Double, value: T): T = js.native
@@ -109,20 +107,6 @@ package object vue {
 
   trait PluginObject[T] extends js.Object {
     var install: PluginFunction[T]
-  }
-
-  @js.native
-  trait ScopedSlotReturnArray extends js.Array[ScopedSlotReturnValue] {
-  }
-
-  object ScopedSlotReturnArray {
-  }
-
-  @js.native
-  trait VNodeChildrenArrayContents extends js.Array[VNodeChildren | VNode] {
-  }
-
-  object VNodeChildrenArrayContents {
   }
 
   @js.native
@@ -283,7 +267,7 @@ package object vue {
   }
 
   trait ComponentOptions extends js.Object {
-    //    var data: js.UndefOr[js.Object | js.ThisFunction0[Vue, js.Object]]
+    // var data: js.UndefOr[js.Object | js.ThisFunction0[Vue, js.Object]]
     var data: js.UndefOr[js.ThisFunction0[Vue, js.Object] | js.Function0[js.Object]]
     var props: js.UndefOr[PropsDefinition]
     var propsData: js.UndefOr[js.Object | js.Dictionary[js.Any]]
@@ -315,7 +299,7 @@ package object vue {
     var filters: js.UndefOr[js.Dictionary[js.Function]]
     var provide: js.UndefOr[js.Object | js.Function0[js.Object]]
     var inject: js.UndefOr[InjectOptions]
-    var model: js.UndefOr[ComponentOptions.Model]
+    var model: js.UndefOr[ModelOption]
     var parent: js.UndefOr[Vue]
     var mixins: js.UndefOr[js.Array[ComponentOptions | VueConstructor]]
     var name: js.UndefOr[String]
@@ -356,7 +340,7 @@ package object vue {
       filters: js.UndefOr[js.Dictionary[js.Function]] = js.undefined,
       provide: js.UndefOr[js.Object | js.Function0[js.Object]] = js.undefined,
       inject: js.UndefOr[InjectOptions] = js.undefined,
-      model: js.UndefOr[ComponentOptions.Model] = js.undefined,
+      model: js.UndefOr[ModelOption] = js.undefined,
       parent: js.UndefOr[Vue] = js.undefined,
       mixins: js.UndefOr[js.Array[ComponentOptions | VueConstructor]] = js.undefined,
       name: js.UndefOr[String] = js.undefined,
@@ -406,30 +390,12 @@ package object vue {
       inheritAttrs.foreach(_v => _obj$.updateDynamic("inheritAttrs")(_v.asInstanceOf[js.Any]))
       _obj$.asInstanceOf[ComponentOptions]
     }
-
-    trait Model extends js.Object {
-      var prop: js.UndefOr[String]
-      var event: js.UndefOr[String]
-    }
-
-    object Model {
-      def apply(
-        prop: js.UndefOr[String] = js.undefined,
-        event: js.UndefOr[String] = js.undefined
-      ): Model = {
-        val _obj$ = js.Dynamic.literal(
-        )
-        prop.foreach(_v => _obj$.updateDynamic("prop")(_v.asInstanceOf[js.Any]))
-        event.foreach(_v => _obj$.updateDynamic("event")(_v.asInstanceOf[js.Any]))
-        _obj$.asInstanceOf[Model]
-      }
-    }
   }
 
   trait FunctionalComponentOptions extends js.Object {
     var name: js.UndefOr[String]
     var props: js.UndefOr[PropsDefinition]
-    var model: js.UndefOr[FunctionalComponentOptions.Model]
+    var model: js.UndefOr[ModelOption]
     var inject: js.UndefOr[InjectOptions]
     var functional: Boolean
     var render: js.UndefOr[js.Function2[CreateElement, RenderContext, VNode | js.Array[VNode]]]
@@ -440,10 +406,9 @@ package object vue {
       functional: true,
       name: js.UndefOr[String] = js.undefined,
       props: js.UndefOr[PropsDefinition] = js.undefined,
-      model: js.UndefOr[FunctionalComponentOptions.Model] = js.undefined,
+      model: js.UndefOr[ModelOption] = js.undefined,
       inject: js.UndefOr[InjectOptions] = js.undefined,
       render: js.UndefOr[js.Function2[CreateElement, RenderContext, VNode | js.Array[VNode]]]
-      //      render: js.UndefOr[(CreateElement, RenderContext) => VNode | js.Array[VNode]]
     ): FunctionalComponentOptions = {
       val _obj$ = js.Dynamic.literal(
         "functional" -> functional.asInstanceOf[js.Any]
@@ -455,23 +420,24 @@ package object vue {
       render.foreach(_v => _obj$.updateDynamic("render")(_v.asInstanceOf[js.Any]))
       _obj$.asInstanceOf[FunctionalComponentOptions]
     }
+  }
 
-    trait Model extends js.Object {
-      var prop: js.UndefOr[String]
-      var event: js.UndefOr[String]
-    }
+  // (Functional)ComponentOptions#modelに指定するあれ
+  trait ModelOption extends js.Object {
+    var prop: js.UndefOr[String]
+    var event: js.UndefOr[String]
+  }
 
-    object Model {
-      def apply(
-        prop: js.UndefOr[String] = js.undefined,
-        event: js.UndefOr[String] = js.undefined
-      ): Model = {
-        val _obj$ = js.Dynamic.literal(
-        )
-        prop.foreach(_v => _obj$.updateDynamic("prop")(_v.asInstanceOf[js.Any]))
-        event.foreach(_v => _obj$.updateDynamic("event")(_v.asInstanceOf[js.Any]))
-        _obj$.asInstanceOf[Model]
-      }
+  object ModelOption {
+    def apply(
+      prop: js.UndefOr[String] = js.undefined,
+      event: js.UndefOr[String] = js.undefined
+    ): ModelOption = {
+      val _obj$ = js.Dynamic.literal(
+      )
+      prop.foreach(_v => _obj$.updateDynamic("prop")(_v.asInstanceOf[js.Any]))
+      event.foreach(_v => _obj$.updateDynamic("event")(_v.asInstanceOf[js.Any]))
+      _obj$.asInstanceOf[ModelOption]
     }
   }
 
@@ -525,6 +491,7 @@ package object vue {
     var set: js.UndefOr[js.Function] // (this: Vue, value: any) => void
     // var cache: js.UndefOr[Boolean] => compat for Vue1.x
   }
+
   object ComputedOptions {
     def apply[T](get: js.Function): ComputedOptions = {
       js.Dynamic.literal(get = get).asInstanceOf[ComputedOptions]
@@ -560,8 +527,8 @@ package object vue {
   object WatchHandler {
     /**
      *
-     * @param handler 第一引数に新しい値、第二引数に古い値を受け取るハンドラ関数。Vueインスタンスが必要な場合は js.ThisFunction を指定する。
-     * @param deep 対象のプロパティだけでなく、その子孫プロパティの変更も監視する場合は true
+     * @param handler   第一引数に新しい値、第二引数に古い値を受け取るハンドラ関数。Vueインスタンスが必要な場合は js.ThisFunction を指定する。
+     * @param deep      対象のプロパティだけでなく、その子孫プロパティの変更も監視する場合は true
      * @param immediate 監視を開始した直後にも一度呼び出す場合は true
      * @return
      */
@@ -571,7 +538,8 @@ package object vue {
   }
 
   trait DirectiveBinding extends VNodeDirective {
-    //    override def modifiers: js.Dictionary[Boolean]
+    // modifiersのundeforを剥がすためだけの型だが、それはできんので…
+    // override def modifiers: js.Dictionary[Boolean]
   }
 
   trait DirectiveOptions extends js.Object {
