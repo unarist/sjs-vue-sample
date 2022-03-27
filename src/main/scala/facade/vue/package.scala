@@ -20,8 +20,8 @@ package object vue {
   // type VNodeChildrenContents = js.UndefOr[js.ArrayVNode | SingleArray[ScopedSlot] | String | Boolean | Null]
   type VNodeChildren = js.UndefOr[String | js.Array[VNode] | js.Array[String | VNode]]
   type Component = VueConstructor | FunctionalComponentOptions | ComponentOptions
-//  type WatchHandler[T] = String | js.Function2[T, T, Unit] | js.ThisFunction2[Vue, T, T, Unit]
-//  type WatchItem = WatchOptionsWithHandler[js.Any] | WatchHandler[Any]
+  // type WatchHandler[T] = String | js.Function2[T, T, Unit] | js.ThisFunction2[Vue, T, T, Unit]
+  // type WatchItem = WatchOptionsWithHandler[js.Any] | WatchHandler[Any]
   type DirectiveFunction = (HTMLElement, DirectiveBinding, VNode, VNode) => Unit
   type InjectKey = String | js.Symbol
   type InjectOptions = js.Dictionary[InjectKey | js.Any] | js.Array[String]
@@ -57,10 +57,6 @@ package object vue {
     def $mount(elementOrSelector: Element | String = ???, hydrating: Boolean = ???): this.type = js.native
     def $forceUpdate(): Unit = js.native
     def $destroy(): Unit = js.native
-    def $set[T](`object`: js.Object, key: String | Double, value: T): T = js.native
-    def $set[T](array: js.Array[T], key: Double, value: T): T = js.native
-    def $delete(`object`: js.Object, key: String | Double): Unit = js.native
-    def $delete[T](array: js.Array[T], key: Double): Unit = js.native
     def $watch(exp: String, callback: js.ThisFunction2[this.type, js.Any, js.Any, Unit]): js.Function0[Unit] = js.native
     def $watch(exp: String, callback: js.ThisFunction2[this.type, js.Any, js.Any, Unit], options: WatchOptions): js.Function0[Unit] = js.native
     def $watch[T](fn: js.ThisFunction0[this.type, T], callback: js.ThisFunction2[this.type, T, T, Unit], options: WatchOptions = ???): js.Function0[Unit] = js.native
@@ -172,8 +168,11 @@ package object vue {
     var attrs: js.UndefOr[js.Dictionary[js.Any]]
     var domProps: js.UndefOr[js.Dictionary[js.Any]]
     var hook: js.UndefOr[js.Dictionary[js.Function]]
-    var on: js.UndefOr[js.Dictionary[js.Function | js.Array[js.Function]]]
-    var nativeOn: js.UndefOr[js.Dictionary[js.Function | js.Array[js.Function]]]
+    // 推論がしんどいので複数ハンドラ対応は捨てる（それでも js.defined か js.Dictionary の型引数どっちかは書かないといけない）
+    // on: js.UndefOr[js.Dictionary[js.Function | js.Array[js.Function]]]
+    // nativeOn: js.UndefOr[js.Dictionary[js.Function | js.Array[js.Function]]]
+    var on: js.UndefOr[js.Dictionary[js.Function]]
+    var nativeOn: js.UndefOr[js.Dictionary[js.Function]]
     var transition: js.UndefOr[js.Object]
     var show: js.UndefOr[Boolean]
     var inlineTemplate: js.UndefOr[VNodeData.InlineTemplate]
@@ -197,11 +196,8 @@ package object vue {
       attrs: js.UndefOr[js.Dictionary[js.Any]] = js.undefined,
       domProps: js.UndefOr[js.Dictionary[js.Any]] = js.undefined,
       hook: js.UndefOr[js.Dictionary[js.Function]] = js.undefined,
-      // 推論がしんどいので複数ハンドラ対応は捨てる（それでも js.defined か js.Dictionary の型引数どっちかは書かないといけない）
-      // on: js.UndefOr[js.Dictionary[js.Function | js.Array[js.Function]]] = js.undefined,
-      // nativeOn: js.UndefOr[js.Dictionary[js.Function | js.Array[js.Function]]] = js.undefined,
-      on: js.UndefOr[js.Dictionary[js.Function] | js.Dynamic] = js.undefined,
-      nativeOn: js.UndefOr[js.Dictionary[js.Function] | js.Dynamic] = js.undefined,
+      on: js.UndefOr[js.Dictionary[js.Function]] = js.undefined,
+      nativeOn: js.UndefOr[js.Dictionary[js.Function]] = js.undefined,
       transition: js.UndefOr[js.Object] = js.undefined,
       show: js.UndefOr[Boolean] = js.undefined,
       inlineTemplate: js.UndefOr[VNodeData.InlineTemplate] = js.undefined,
@@ -291,7 +287,8 @@ package object vue {
     var data: js.UndefOr[js.ThisFunction0[Vue, js.Object] | js.Function0[js.Object]]
     var props: js.UndefOr[PropsDefinition]
     var propsData: js.UndefOr[js.Object | js.Dictionary[js.Any]]
-    var computed: js.UndefOr[js.Dictionary[js.Function0[js.Any | ComputedOptions[js.Any]]]]
+    // computed?: js.Dictionary[js.Function | ComputedOptions]
+    var computed: js.UndefOr[js.Dictionary[js.Object]]
     var methods: js.UndefOr[js.Dictionary[js.Function]]
     // 型をシンプルにするため、直接ハンドラ関数を指定する形は捨てた
     var watch: js.UndefOr[js.Dictionary[WatchHandler]]
@@ -333,7 +330,7 @@ package object vue {
       data: js.UndefOr[js.ThisFunction0[Vue, js.Object] | js.Function0[js.Object]] = js.undefined,
       props: js.UndefOr[PropsDefinition] = js.undefined,
       propsData: js.UndefOr[js.Object | js.Dictionary[js.Any]] = js.undefined,
-      computed: js.UndefOr[js.Dictionary[js.Function0[js.Any | ComputedOptions[js.Any]]]] = js.undefined,
+      computed: js.UndefOr[js.Dictionary[js.Function]] = js.undefined,
       methods: js.UndefOr[js.Dictionary[js.Function]] = js.undefined,
       watch: js.UndefOr[js.Dictionary[WatchHandler]] = js.undefined,
       el: js.UndefOr[Element | String] = js.undefined,
@@ -523,10 +520,18 @@ package object vue {
     def Function[T]: PropType[js.UndefOr[T]] = js.Dynamic.global.Function.asInstanceOf[PropType[js.UndefOr[T]]]
   }
 
-  trait ComputedOptions[T] extends js.Object {
-    def get(): T
-    def set(value: T): Unit
-    var cache: js.UndefOr[Boolean]
+  trait ComputedOptions extends js.Object {
+    var get: js.UndefOr[js.Function] // (this: Vue, arg1: Vue) => any
+    var set: js.UndefOr[js.Function] // (this: Vue, value: any) => void
+    // var cache: js.UndefOr[Boolean] => compat for Vue1.x
+  }
+  object ComputedOptions {
+    def apply[T](get: js.Function): ComputedOptions = {
+      js.Dynamic.literal(get = get).asInstanceOf[ComputedOptions]
+    }
+    def apply[T](get: js.Function, set: js.Function): ComputedOptions = {
+      js.Dynamic.literal(get = get, set = set).asInstanceOf[ComputedOptions]
+    }
   }
 
   trait WatchOptions extends js.Object {

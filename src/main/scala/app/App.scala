@@ -21,6 +21,9 @@ object App {
         println("comp-normal mounted")
         ()
       },
+      computed = js.Dictionary[js.Function](
+        "clickCount2x" -> js.Any.fromFunction1((vueInstance: vue.Vue) => vueInstance.$data.clickCount.asInstanceOf[Int] * 2)
+      ),
       watch = js.Dictionary(
         "strProp" -> vue.WatchHandler(js.ThisFunction.fromFunction2((v: vue.Vue, newValue: String) => println(""))),
         "boolProp" -> vue.WatchHandler((newValue: Boolean) => println("")),
@@ -35,7 +38,7 @@ object App {
           |<div>
           |<h3>Component (class-based, template)</h3>
           |<p>strProp={{strProp}}, strProp2={{strProp2}}, boolProp={{boolProp}}, boolProp2={{boolProp2}}</p>
-          |<p>clickCount={{clickCount}} <button v-on:click='clickCount = clickCount + 1'>click</button></p>
+          |<p>clickCount={{clickCount}}, clickCount2x={{clickCount2x}} <button v-on:click='clickCount = clickCount + 1'>click</button></p>
           |<div><slot></slot></div>
           |</div>
           |""".stripMargin
@@ -57,7 +60,6 @@ object App {
             s"clickCount=${vueInstance.$data.clickCount} ",
             h("button", vue.VNodeData(
               // js.defined で包むか、js.Dictionaryに型引数を書くか、どちらかが必要
-              // もしくはjs.Dynamic.literalを使う → comp-functional参照
               on = js.Dictionary[js.Function](
                 "click" -> (() => vueInstance.$data.clickCount = vueInstance.$data.clickCount.asInstanceOf[Int] + 1)
               )
@@ -78,11 +80,6 @@ object App {
         h("div", js.Array(
           h("h3", "Component (functional, render function)"),
           h("p", s"strProp=${ctx.props.strProp}, boolProp=${ctx.props.boolProp}"),
-          h("button", vue.VNodeData(
-            on = js.Dynamic.literal(
-              click = () => dom.window.alert("clicked")
-            )
-          ), "alert"),
           h("div", ctx.slots().getOrElse("default", js.undefined))
         ))
       }
