@@ -8,7 +8,6 @@ import js.|
 package object vue {
   type SingleArray[T] = js.Array[T]
   type CombinedVueInstance = Vue
-  // VueConstructorが object Vue っぽかったのでそうしたけど、どうなんだ？
   type VueConstructor = Vue.type
   type ExtendedVue = VueConstructor
   type PluginFunction[T] = js.Function2[VueConstructor, T, Unit]
@@ -21,8 +20,8 @@ package object vue {
   // type VNodeChildrenContents = js.UndefOr[js.ArrayVNode | SingleArray[ScopedSlot] | String | Boolean | Null]
   type VNodeChildren = js.UndefOr[String | js.Array[VNode] | js.Array[String | VNode]]
   type Component = VueConstructor | FunctionalComponentOptions | ComponentOptions
-  type WatchHandler[T] = String | js.Function2[T, T, Unit]
-  type WatchItem = WatchOptionsWithHandler[js.Any] | WatchHandler[Any]
+//  type WatchHandler[T] = String | js.Function2[T, T, Unit] | js.ThisFunction2[Vue, T, T, Unit]
+//  type WatchItem = WatchOptionsWithHandler[js.Any] | WatchHandler[Any]
   type DirectiveFunction = (HTMLElement, DirectiveBinding, VNode, VNode) => Unit
   type InjectKey = String | js.Symbol
   type InjectOptions = js.Dictionary[InjectKey | js.Any] | js.Array[String]
@@ -33,7 +32,7 @@ package object vue {
     def apply(): VNode = js.native
     def apply(tag: String): VNode = js.native
     def apply(tag: String, children: VNodeChildren): VNode = js.native
-    def apply(tag: String, data: VNodeData, children: VNodeChildren = ???): VNode = js.native
+    def apply(tag: String, data: VNodeData = ???, children: VNodeChildren = ???): VNode = js.native
   }
 
   @JSGlobal
@@ -294,7 +293,8 @@ package object vue {
     var propsData: js.UndefOr[js.Object | js.Dictionary[js.Any]]
     var computed: js.UndefOr[js.Dictionary[js.Function0[js.Any | ComputedOptions[js.Any]]]]
     var methods: js.UndefOr[js.Dictionary[js.Function]]
-    var watch: js.UndefOr[js.Dictionary[WatchItem]]
+    // var watch: js.UndefOr[js.Dictionary[WatchHandler | WatchOptionsWithHandler]]
+    var watch: js.UndefOr[js.Object | js.Dictionary[js.Object]]
     var el: js.UndefOr[Element | String]
     var template: js.UndefOr[String]
     var render: js.UndefOr[js.ThisFunction1[Vue, CreateElement, VNode]]
@@ -335,7 +335,7 @@ package object vue {
       propsData: js.UndefOr[js.Object | js.Dictionary[js.Any]] = js.undefined,
       computed: js.UndefOr[js.Dictionary[js.Function0[js.Any | ComputedOptions[js.Any]]]] = js.undefined,
       methods: js.UndefOr[js.Dictionary[js.Function]] = js.undefined,
-      watch: js.UndefOr[js.Dictionary[WatchItem]] = js.undefined,
+      watch: js.UndefOr[js.Object | js.Dictionary[js.Object]] = js.undefined,
       el: js.UndefOr[Element | String] = js.undefined,
       template: js.UndefOr[String] = js.undefined,
       render: js.UndefOr[js.ThisFunction1[Vue, CreateElement, VNode]] = js.undefined,
@@ -547,22 +547,23 @@ package object vue {
     }
   }
 
-  trait WatchOptionsWithHandler[T] extends WatchOptions {
-    var handler: WatchHandler[T]
+  trait WatchOptionsWithHandler extends WatchOptions {
+    // var handler: String | js.Function2[T, T, Unit] | js.ThisFunction2[Vue, T, T, Unit]
+    var handler: js.Object
   }
 
   object WatchOptionsWithHandler {
     def apply[T](
-      handler: WatchHandler[T],
+      handler: js.Object,
       deep: js.UndefOr[Boolean] = js.undefined,
       immediate: js.UndefOr[Boolean] = js.undefined
-    ): WatchOptionsWithHandler[T] = {
+    ): WatchOptionsWithHandler = {
       val _obj$ = js.Dynamic.literal(
         "handler" -> handler.asInstanceOf[js.Any]
       )
       deep.foreach(_v => _obj$.updateDynamic("deep")(_v.asInstanceOf[js.Any]))
       immediate.foreach(_v => _obj$.updateDynamic("immediate")(_v.asInstanceOf[js.Any]))
-      _obj$.asInstanceOf[WatchOptionsWithHandler[T]]
+      _obj$.asInstanceOf[WatchOptionsWithHandler]
     }
   }
 

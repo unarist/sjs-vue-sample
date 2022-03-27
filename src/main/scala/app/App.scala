@@ -21,6 +21,15 @@ object App {
         println("comp-normal mounted")
         ()
       },
+      // まあここまで来たら js.Dynamic.literal許容しても。。
+      watch = js.Dictionary[js.Object](
+        "strProp" -> js.ThisFunction.fromFunction1((newValue: String) => println("")),
+        "boolProp" -> ((newValue: Boolean, oldValue: Boolean) => println("")),
+        "clickCount" -> vue.WatchOptionsWithHandler(
+          handler = (newValue: Int) => println(""),
+          immediate = true
+        )
+      ),
       template =
       // language=HTML
         """
